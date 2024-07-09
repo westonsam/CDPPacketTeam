@@ -1,0 +1,2 @@
+DUID:MAMA0003
+DATA:Test Data String
