@@ -4,16 +4,22 @@
 #include <string>
 #include <cstdint> //used for uint8_t
 #include <vector> //includes vectors, similar arrays
-
-using namespace std;
-
-string DDUID;
-string DATA;
+#include <stdexcept>
+#include "Packet.h"
+#include "BloomFilter.h"
+#include "Utils.h"
+using std::string;
+using std::vector;
+using std::ifstream;
+using std::ofstream;
+using std::cout;
+using std::endl;
 
 vector<uint8_t> convertStringToVector (string line);
 string convertVectorToString (vector<uint8_t> buffer);
 string readFile(string filename);
 void writeFile(string filename, vector<uint8_t> RxData);
+vector<string> processInputFile(string input);
 
 string readFile(string filename) {
     ifstream fin;
@@ -37,7 +43,7 @@ void writeFile(string filename, vector<uint8_t> TxData) {
 
     fout.open(filename);
       if(!fout.is_open()) {
-        cout << "Output file failed to open.\n";
+        cout << "Output file failed to open." << endl;
         exit(EXIT_FAILURE);
       }
     string data;   
@@ -63,20 +69,31 @@ string convertVectorToString (vector<uint8_t> buffer) {
     return str;
 }
 
-string processInputFile(string input){
-    DDUID = input.substr(input.find("DUID:"), input.find("DATA:"));
+vector<string> processInputFile(string input){
+    string DDUID, TOPIC, DATA;
+    DDUID = input.substr(input.find("DUID:"), input.find("TOPIC:"));
+    TOPIC = input.substr(input.find("TOPIC:"), input.find("DATA:"));
     DATA = input.substr(input.find("DATA:"), input.length() - 1);
+    vector<string> processed = {DDUID, TOPIC, DATA};
     cout <<  "PROCESSED:" << endl;
-    cout << DDUID << endl;
-    cout << DATA << endl;
-    return "";
+    cout << processed[0] << endl;
+    cout << processed[1] << endl;
+    cout << processed[2] << endl;
+    return processed;
 }
+
 
 int main() {
     string inputData = readFile("infile.txt");
     cout << inputData << endl;
     processInputFile(inputData);
-    vector<uint8_t> vector = convertStringToVector(inputData);
-    writeFile("outfile.txt", vector);
-    
+    vector<string> processed = processInputFile(inputData);
+    vector<uint8_t> dduid = convertStringToVector(processed[0]);
+    uint8_t topic = Packet::stringToTopic(processed[1]);
+
+    vector<uint8_t> data = convertStringToVector(processed[2]);
+    Packet dp;
+    BloomFilter filter = BloomFilter(DEFAULT_NUM_SECTORS, DEFAULT_NUM_HASH_FUNCS, DEFAULT_BITS_PER_SECTOR, DEFAULT_MAX_MESSAGES);
+    dp.prepareForSending(&filter, dduid, DuckType::MAMA,topic, data);
+    cout << convertVectorToString(dp.getBuffer());
 }
