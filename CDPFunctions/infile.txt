@@ -1,2 +1,3 @@
 DUID:MAMA0003
+TOPIC:location
 DATA:Test Data String
