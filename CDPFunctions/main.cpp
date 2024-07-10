@@ -4,6 +4,8 @@
 #include <string>
 #include <cstdint> //used for uint8_t
 #include <vector> //includes vectors, similar arrays
+#include "LoRaPacket.h"
+
 
 using namespace std;
 
