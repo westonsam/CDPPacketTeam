@@ -17,13 +17,8 @@ int LoraPacket::formLoRaPacket(vector<uint8_t> cdpData) {
  
 
   
-  //assembling preamble
-  vector<uint8_t> partPreamble = {'D', 'U', 'C', 'K', 'C', 'A', 'L', 'L'};
-  vector<uint8_t> random(4);
-  preamble.insert(preamble.end(), partPreamble.begin(), partPreamble.end());
-  preamble.insert(preamble.end(), random.begin(), random.end());
-  duckutils::getRandomBytes(random.size(), random.data());
-  preamble.insert(preamble.end(), random.begin(), random.end());
+  //isnerting preamble
+  vector<uint8_t> preamble = {'D', 'U', 'C', 'K', 'C', 'A', 'L', 'L'};
   loraBuffer.insert(loraBuffer.end(), preamble.begin(), preamble.end());
 
   cout << "Preamble: " << duckutils::convertToHex(preamble.data(), preamble.size()).c_str() << endl;

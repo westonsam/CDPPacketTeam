@@ -27,10 +27,9 @@ class LoraPacket {
     friend class Packet;
     LoraPacket() {};
 
-    /////////////////assuming LoRa packet is in explicit mode with coding rate of 4/8 for header///////////////
-    //first 8 characters of preamble. last 4 will be randomly generated
-    vector<uint8_t> partPreamble;  
-
+    /////////////////assuming LoRa packet is in explicit mode
+    
+    
     //characters used to sync receiver and transmitter
     vector<uint8_t> preamble;       
 
@@ -45,6 +44,11 @@ class LoraPacket {
 
     //crc for CDP. length tbd
     vector<uint8_t> payloadCRC;
+
+    uint8_t syncWord; //used to set mode of channel 
+    uint8_t spreadingFactor;
+    float bandwidth;
+    uint8_t codingRate;
 
 
     LoraPacket(vector<uint8_t>& lorabuffer) {
@@ -61,7 +65,7 @@ class LoraPacket {
     //int calculateCheckSumPayload(vector<byte> payload, vector<byte> payloadcrc);
 
     private:
-    int setSyncWord(uint8_t syncWord); //set sync word used to communicate between radios. 0x12 for private and 0x34 for public channels.
+    int setSyncWord(uint8_t syncword); //set sync word used to communicate between radios. 0x12 for private and 0x34 for public channels.
     vector<uint8_t> loraBuffer;
 
     
