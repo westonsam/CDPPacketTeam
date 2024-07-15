@@ -1,6 +1,12 @@
 #include "Utils.h"
 #include <random>
 #include <cfloat>
+#include <vector>
+#include <string>
+#include <cstdint>
+
+
+
 namespace duckutils
 {
 
@@ -22,7 +28,7 @@ namespace duckutils
 
     for (int i = 0; i < 16; ++i)
     {
-      std::cout << dist(mt) << "\n";
+      //std::cout << dist(mt) << "\n";
     }
     int num = dist(mt);
     return num;
@@ -54,4 +60,41 @@ namespace duckutils
     value |= data[3];
     return value;
   }
+  
+  std::vector<uint8_t> convertStringToVector (std::string line) 
+  {
+    
+    std::vector<uint8_t> buffer;
+    for (char str_char : line)
+        buffer.push_back(uint8_t(str_char));
+    return buffer;
+  } 
+
+
+  std::string convertVectorToString (std::vector<uint8_t> buffer) 
+  {
+      std::string str = "";
+      for (int i = 0; i < buffer.size(); i++) {
+          str += buffer[i];
+      }
+      return str;
+  }
+
+  std::vector <uint8_t> convertNumToVector(uint32_t data) 
+  {
+    std::vector<uint8_t> newData;
+    for(int i=0; i < 4; i++)
+    {
+      newData.push_back(data >> (24-(i*8)) & 0xFF);
+    }
+    return newData;
+  }
+  /*int printVector(std::vector<uint8_t> vec, uint32_t size)
+  {
+    for (int i = 0; i < size; i++)
+    {
+      std::cout << "index: " << i << " data " << vec[i] << std::endl;
+    }
+    return 0;
+  }*/
 }

@@ -9,7 +9,6 @@
 
 using namespace std;
 
-
 #define DUCK_ERR_NONE 0
 #define DUCKPACKET_ERR_SIZE_INVALID -4000
 #define DUCKPACKET_ERR_TOPIC_INVALID -4001
@@ -57,16 +56,19 @@ int Packet::prepareForSending(BloomFilter *filter, vector<uint8_t> destinationId
 
   // ----- insert packet header  -----
   // source device uid
+
   buffer.insert(buffer.end(), sduid.begin(), sduid.end());
-  cout << "SDuid:     " << duckutils::convertToHex(sduid.data(), sduid.size()).c_str() << endl;
+  cout << "SDuid:     " << duckutils::convertToHex(buffer.data(), buffer.size()).c_str() << endl;
 
   // destination device uid
-  buffer.insert(buffer.end(), dduid.begin(), dduid.end());
-  cout << "DDuid:     " << duckutils::convertToHex(destinationId.data(), destinationId.size()).c_str() << endl;
+
+  buffer.insert(buffer.end(), destinationId.begin(), destinationId.end());
+  cout << "DDuid:     " << duckutils::convertToHex(buffer.data(), buffer.size()).c_str() << endl;
 
   // message uid
   buffer.insert(buffer.end(), &message_id[0], &message_id[MUID_LENGTH]);
   cout << "Muid:      " << duckutils::convertToHex(buffer.data(), buffer.size()).c_str() << endl;
+  //cout << "Muid:     " << message_id << endl;
 
   // topic
   buffer.insert(buffer.end(), topic);

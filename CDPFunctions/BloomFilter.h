@@ -13,8 +13,7 @@
 #include <cstdint>
 #include <vector> 
 
-using std::cout;
-using std::endl;
+using namespace std;
 
 
 const int DEFAULT_NUM_SECTORS = 312;

@@ -1,8 +1,8 @@
 #include "BloomFilter.h"
 #include "Packet.h"
 #include <iostream>
-using std::cout;
-using std::endl;
+
+using namespace std;
 
 void BloomFilter::set_hash_results(unsigned char* msg, int msgSize,
     std::unique_ptr<unsigned int[]> & hashResults

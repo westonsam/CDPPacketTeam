@@ -10,6 +10,8 @@
 #include "BloomFilter.h"
 #include "Utils.h"
 
+using namespace std;
+
 #define MAX_HOPS 6
 
 // field/section length (in bytes)
@@ -92,28 +94,26 @@ enum reservedTopic
     max_reserved = 0x0F
 };
 
-using std::string;
-using std::vector;
 
 /**
  * @brief Use this DUID to send to all PapaDucks
  *
  */
-static std::vector<uint8_t> ZERO_DUID = {0x00, 0x00, 0x00, 0x00,
+static vector<uint8_t> ZERO_DUID = {0x00, 0x00, 0x00, 0x00,
                                          0x00, 0x00, 0x00, 0x00};
 
 /**
  * @brief Use this DUID to be received by every duck in the network
  *
  */
-static std::vector<uint8_t> BROADCAST_DUID = {0xFF, 0xFF, 0xFF, 0xFF,
+static vector<uint8_t> BROADCAST_DUID = {0xFF, 0xFF, 0xFF, 0xFF,
                                               0xFF, 0xFF, 0xFF, 0xFF};
 
 /**
  * @brief Use this DUID to be received by every duck in the network
  *
  */
-static std::vector<uint8_t> PAPADUCK_DUID = {0x50, 0x61, 0x70, 0x61,
+static vector<uint8_t> PAPADUCK_DUID = {0x50, 0x61, 0x70, 0x61,
                                              0x44, 0x75, 0x63, 0x6B};
 
 class Packet
@@ -124,15 +124,15 @@ public:
     vector<uint8_t> getDuckId() { return this->sduid = sduid; }
     int prepareForSending(BloomFilter *filter, const vector<uint8_t> destinationId, uint8_t duckType, uint8_t topic, vector<uint8_t> data);
     // prepareForRelaying
-    std::vector<uint8_t> getBuffer() { return buffer; }
+    vector<uint8_t> getBuffer() { return buffer; }
     uint8_t getTopic() { return buffer[TOPIC_POS]; }
     void reset() { vector<uint8_t>().swap(buffer); }
     /// Source Device UID (8 bytes)
-    std::vector<u_int8_t> sduid;
+    vector<u_int8_t> sduid;
     /// Destination Device UID (8 bytes)
-    std::vector<uint8_t> dduid;
+    vector<uint8_t> dduid;
     /// Message UID (4 bytes)
-    std::vector<uint8_t> muid;
+    vector<uint8_t> muid;
     /// Message topic (1 byte)
     uint8_t topic;
     /// Offset to the Path section (1 byte)
@@ -142,15 +142,15 @@ public:
     /// Number of times a packet was relayed in the mesh
     uint8_t hopCount;
     /// crc32 for the data section
-    std::uint32_t dcrc;
+    uint32_t dcrc;
     /// Data section
-    std::vector<uint8_t> data;
+    vector<uint8_t> data;
     /// Path section (48 bytes max)
-    std::vector<uint8_t> path;
+    vector<uint8_t> path;
     // time received
     unsigned long timeReceived;
 
-    Packet(const std::vector<uint8_t> &buffer)
+    Packet(const vector<uint8_t> &buffer)
     {
         int buffer_length = buffer.size();
         sduid.assign(&buffer[SDUID_POS], &buffer[DDUID_POS]);
@@ -162,7 +162,7 @@ public:
         dcrc = duckutils::toUint32(&buffer[DATA_CRC_POS]);
         data.assign(&buffer[DATA_POS], &buffer[buffer_length]);
     }
-    static std::string topicToString(int topic)
+    static string topicToString(int topic)
     {
         switch (topic)
         {
@@ -196,7 +196,7 @@ public:
             return "unknown";
         }
     }
-    static int stringToTopic(string topic)
+    static int stringToTopic(std::string topic)
     {
         if (topic == "status") {
             return topics::status;
