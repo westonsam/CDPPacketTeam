@@ -20,10 +20,6 @@ namespace duckutils
     std::mt19937 mt(rd());
     std::uniform_real_distribution<double> dist(1, std::nextafter(range, DBL_MAX));
 
-    for (int i = 0; i < 16; ++i)
-    {
-      std::cout << dist(mt) << "\n";
-    }
     int num = dist(mt);
     return num;
   }

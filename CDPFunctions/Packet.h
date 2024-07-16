@@ -35,18 +35,19 @@
 #define MAX_DATA_LENGTH (PACKET_LENGTH - HEADER_LENGTH)
 // #define MAX_PATH_OFFSET (PACKET_LENGTH - DUID_LENGTH - 1)
 
-enum DuckType {
-  /// A Duck of unknown type
-  UNKNOWN = 0x00,
-  /// A PapaDuck
-  PAPA = 0x01,
-  /// A MamaDuck
-  MAMA = 0x02,
-  /// A DuckLink
-  LINK = 0x03,
-  /// A Detector Duck
-  DETECTOR = 0x04,
-  MAX_TYPE
+enum DuckType
+{
+    /// A Duck of unknown type
+    UNKNOWN = 0x00,
+    /// A PapaDuck
+    PAPA = 0x01,
+    /// A MamaDuck
+    MAMA = 0x02,
+    /// A DuckLink
+    LINK = 0x03,
+    /// A Detector Duck
+    DETECTOR = 0x04,
+    MAX_TYPE
 };
 
 enum topics
@@ -119,37 +120,40 @@ static std::vector<uint8_t> PAPADUCK_DUID = {0x50, 0x61, 0x70, 0x61,
 class Packet
 {
 public:
-    Packet() {} 
-    void setDuckId(string duckId);
-    vector<uint8_t> getDuckId() { return this->sduid = sduid; }
-    int prepareForSending(BloomFilter *filter, const vector<uint8_t> destinationId, uint8_t duckType, uint8_t topic, vector<uint8_t> data);
-    // prepareForRelaying
-    std::vector<uint8_t> getBuffer() { return buffer; }
-    uint8_t getTopic() { return buffer[TOPIC_POS]; }
-    void reset() { vector<uint8_t>().swap(buffer); }
+    // ---- packet properties ----
+
     /// Source Device UID (8 bytes)
     std::vector<u_int8_t> sduid;
+
     /// Destination Device UID (8 bytes)
     std::vector<uint8_t> dduid;
+
     /// Message UID (4 bytes)
     std::vector<uint8_t> muid;
+
     /// Message topic (1 byte)
     uint8_t topic;
-    /// Offset to the Path section (1 byte)
-    uint8_t path_offset;
-    /// Type of ducks as define in DuckTypes.h
+
+    /// Type of ducks (1 byte)
     uint8_t duckType;
-    /// Number of times a packet was relayed in the mesh
+
+    /// Number of times a packet was relayed in the mesh (1 byte)
     uint8_t hopCount;
-    /// crc32 for the data section
+
+    /// crc32 for the data section (4 bytes)
     std::uint32_t dcrc;
+
     /// Data section
     std::vector<uint8_t> data;
+
     /// Path section (48 bytes max)
     std::vector<uint8_t> path;
+
     // time received
     unsigned long timeReceived;
 
+    // packet constructors
+    Packet() {}
     Packet(const std::vector<uint8_t> &buffer)
     {
         int buffer_length = buffer.size();
@@ -162,6 +166,21 @@ public:
         dcrc = duckutils::toUint32(&buffer[DATA_CRC_POS]);
         data.assign(&buffer[DATA_POS], &buffer[buffer_length]);
     }
+
+    // ---- packet functions ----
+
+    void setDuckId(vector<uint8_t> duckId);
+
+    vector<uint8_t> getDuckId() { return this->sduid = sduid; }
+
+    int prepareForSending(BloomFilter *filter, const vector<uint8_t> destinationId, uint8_t duckType, uint8_t topic, uint8_t hopCount, vector<uint8_t> data);
+
+    std::vector<uint8_t> getBuffer() { return buffer; };
+
+    uint8_t getTopic() { return buffer[TOPIC_POS]; }
+
+    void reset() { vector<uint8_t>().swap(buffer); }
+
     static std::string topicToString(int topic)
     {
         switch (topic)
@@ -196,36 +215,62 @@ public:
             return "unknown";
         }
     }
+
     static int stringToTopic(string topic)
     {
-        if (topic == "status") {
+        if (topic == "status")
+        {
             return topics::status;
-        } else if (topic == "cpm") {
+        }
+        else if (topic == "cpm")
+        {
             return topics::cpm;
-        } else if (topic == "location") {
+        }
+        else if (topic == "location")
+        {
             return topics::location;
-        } else if (topic == "sensor") {
+        }
+        else if (topic == "sensor")
+        {
             return topics::sensor;
-        } else if (topic == "alert") {
+        }
+        else if (topic == "alert")
+        {
             return topics::alert;
-        } else if (topic == "health") {
+        }
+        else if (topic == "health")
+        {
             return topics::health;
-        } else if (topic == "dcmd") {
+        }
+        else if (topic == "dcmd")
+        {
             return topics::dcmd;
-        } else if (topic == "mq7") {
+        }
+        else if (topic == "mq7")
+        {
             return topics::mq7;
-        } else if (topic == "gp2y") {
+        }
+        else if (topic == "gp2y")
+        {
             return topics::gp2y;
-        } else if (topic == "bmp280") {
+        }
+        else if (topic == "bmp280")
+        {
             return topics::bmp280;
-        } else if (topic == "dht11") {
+        }
+        else if (topic == "dht11")
+        {
             return topics::dht11;
-        } else if (topic == "pir") {
+        }
+        else if (topic == "pir")
+        {
             return topics::pir;
-        } else if (topic == "bmp180") {
+        }
+        else if (topic == "bmp180")
+        {
             return topics::bmp180;
-        } 
-            return topics::status;
+        }
+        return topics::status;
     }
 
 private:

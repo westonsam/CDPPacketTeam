@@ -11,11 +11,10 @@
 #include <cstdlib>
 #include <string>
 #include <cstdint>
-#include <vector> 
+#include <vector>
 
 using std::cout;
 using std::endl;
-
 
 const int DEFAULT_NUM_SECTORS = 312;
 const int DEFAULT_NUM_HASH_FUNCS = 2;
@@ -111,6 +110,7 @@ public:
     this->Seeds = Seeds;
 
     cout << "bloom_init end" << endl;
+    cout << endl;
   }
 
   /**
