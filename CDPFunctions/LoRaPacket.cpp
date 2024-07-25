@@ -1,4 +1,5 @@
 #include "LoRaPacket.h"
+//#include <algorithim>
 #include "Utils.h"
 #include "CRC32.h"
 #include <cstdint>
@@ -18,35 +19,47 @@ int LoraPacket::formLoRaPacket(vector<uint8_t> cdpData) {
 
   
   //isnerting preamble
-  vector<uint8_t> preamble = {'D', 'U', 'C', 'K', 'C', 'A', 'L', 'L'};
+  vector<uint8_t> preamble = {10, 10, 10, 10, 10, 10, 10, 10};
   loraBuffer.insert(loraBuffer.end(), preamble.begin(), preamble.end());
-
   cout << "Preamble: " << duckutils::convertToHex(preamble.data(), preamble.size()).c_str() << endl;
+  uint8_t preambleSize = duckutils::countNumBytes(preamble);
+  cout << "Size of preamble: " << preambleSize << " bytes " << endl;
   
   //inserting header
-  
-  header={3, 2};
+  uint8_t payloadSize = duckutils::countNumBytes(cdpData);
+  //1st byte: payload size, 
+  //2nd byte: [0:2] FEC CR, [3] CRC prescence, [4:7] headerCRC << 4, 
+  //3rd byte: [0:3] headerCRC >> 4, [4:7] 0000
+  header = {payloadSize, 0, 0};
   loraBuffer.insert(loraBuffer.end(), header.begin(), header.end());
   cout << "Header: "<< duckutils::convertToHex(header.data(), header.size()).c_str() << endl;
+  cout << "Size of header: " << duckutils::countNumBytes(header) << " bytes " << endl;
 
-  //inserting header crc
+  /*//inserting header crc
   headerCRC = calculateCRCHeader(header);
   loraBuffer.insert(loraBuffer.end(), headerCRC.begin(), headerCRC.end());
   cout << "HeaderCRC: " << duckutils::convertToHex(headerCRC.data(), headerCRC.size()).c_str() << endl;
+  cout << "Size of headerCRC: " << duckutils::countNumBytes(headerCRC) << " bytes " << endl;*/
 
   //inserting payload
   payload = cdpData;
   loraBuffer.insert(loraBuffer.end(), payload.begin(), payload.end());
   cout <<"Payload: " << duckutils::convertToHex(payload.data(), payload.size()).c_str() << endl;
+  cout << "Size of payload: " << duckutils::countNumBytes(payload) << " bytes " << endl;
 
   //inserting payloadCRC
   payloadCRC = calculateCRCHeader(payload);
   loraBuffer.insert(loraBuffer.end(), payloadCRC.begin(), payloadCRC.end());
-
   cout << "Payload CRC: " << duckutils::convertToHex(payloadCRC.data(), payloadCRC.size()).c_str() << endl;
+  cout << "Size of payloadCRC: " << duckutils::countNumBytes(payloadCRC) << " bytes " << endl;
+
+  //check size of lora packet
+  cout << "Size of LoRa packet: " << duckutils::countNumBytes(loraBuffer) << " bytes " << endl;
 
   // output lora packet
   cout << "Constructed Lora Packet: " << duckutils::convertToHex(loraBuffer.data(), loraBuffer.size()).c_str() << endl;
+
+  
   return DUCK_ERR_NONE;
   }
 

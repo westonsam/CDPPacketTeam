@@ -11,6 +11,7 @@
 #define PRIVATE_CHANNEL 18 //0x12
 #define PUBLIC_CHANNEL 52 //0x34
 
+//need to double check
 #define PREAMBLE_POS 0
 #define HEADER_POS 12
 #define HEADERCRC_POS 14
@@ -29,7 +30,6 @@ class LoraPacket {
 
     /////////////////assuming LoRa packet is in explicit mode
     
-    
     //characters used to sync receiver and transmitter
     vector<uint8_t> preamble;       
 
@@ -45,10 +45,13 @@ class LoraPacket {
     //crc for CDP. length tbd
     vector<uint8_t> payloadCRC;
 
-    uint8_t syncWord; //used to set mode of channel 
+    //used to set mode of channel 
+    uint8_t syncWord; 
+
     uint8_t spreadingFactor;
     float bandwidth;
     uint8_t codingRate;
+    
 
 
     LoraPacket(vector<uint8_t>& lorabuffer) {

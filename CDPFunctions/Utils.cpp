@@ -97,4 +97,8 @@ namespace duckutils
     }
     return 0;
   }*/
+  uint32_t countNumBytes(std::vector<uint8_t> buff)
+  {
+    return buff.size();
+  }
 }
