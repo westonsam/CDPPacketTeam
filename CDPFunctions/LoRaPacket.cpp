@@ -28,7 +28,7 @@ int LoraPacket::formLoRaPacket(vector<uint8_t> cdpData) {
   //inserting header
   uint8_t payloadSize = duckutils::countNumBytes(cdpData);
   //1st byte: payload size, 
-  //2nd byte: [0:2] FEC CR, [3] CRC prescence, [4:7] headerCRC << 4, 
+  //2nd byte: [0:2] FEC CR, [3] CRC prescence, [4:7] headerCRC << 4,
   //3rd byte: [0:3] headerCRC >> 4, [4:7] 0000
   header = {payloadSize, 0, 0};
   loraBuffer.insert(loraBuffer.end(), header.begin(), header.end());

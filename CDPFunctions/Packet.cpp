@@ -27,7 +27,7 @@ void Packet::getMessageId(BloomFilter *filter, uint8_t message_id[MUID_LENGTH])
   }
 }
 
-int Packet::prepareForSending(BloomFilter *filter, vector<uint8_t> dduid, uint8_t topic, uint8_t duckType, uint8_t hopCount, vector<uint8_t> data)
+int Packet::prepareForSending(BloomFilter *filter, vector<uint8_t> dduid, uint8_t Topic, uint8_t duckType, uint8_t hopCount, vector<uint8_t> data)
 {
 
   int data_length = data.size();
@@ -60,27 +60,32 @@ int Packet::prepareForSending(BloomFilter *filter, vector<uint8_t> dduid, uint8_
 
   // destination device uid
   buffer.insert(buffer.end(), dduid.begin(), dduid.end());
-  this->dduid = dduid;
+  //this->dduid = dduid;
+  duckutils::printVector(dduid, dduid.size());
 
   // message uid
   buffer.insert(buffer.end(), &message_id[0], &message_id[MUID_LENGTH]);
-  this->muid = muid;
+  //this->muid = muid;
 
   // topic
-  buffer.insert(buffer.end(), topic);
-  this->topic = topic;
+  
+  buffer.push_back(Topic);
+  //this->topic = topic;
+  //cout << topic << endl;
+  
 
   // duckType
-  buffer.insert(buffer.end(), duckType);
-  this->duckType = duckType;
+  buffer.push_back(duckType);
+  //this->duckType = duckType;
 
   // hop count
-  buffer.insert(buffer.end(), hopCount);
-  this->hopCount = hopCount;
+  buffer.push_back(hopCount);
+  //this->hopCount = hopCount;
 
   // data crc
-  buffer.insert(buffer.end(), dcrc);
-  this->dcrc = dcrc;
+  vector<uint8_t> dataCRC = duckutils::convertNumToVector(dcrc);
+  buffer.insert(buffer.end(), dataCRC.begin(), dataCRC.end());
+  //this->dcrc = dcrc;
   
   // data
   buffer.insert(buffer.end(), data.begin(), data.end());
@@ -111,4 +116,8 @@ void Packet::calculateCRC(vector<uint8_t> data)
   uint32_t value;
   value = crc32<IEEE8023_CRC32_POLYNOMIAL>(0xFFFFFFFF, buffer.begin(), buffer.end());
   dcrc = value;
+  
 }
+
+
+

@@ -89,16 +89,17 @@ namespace duckutils
     }
     return newData;
   }
-  /*int printVector(std::vector<uint8_t> vec, uint32_t size)
+  void printVector(std::vector<uint8_t> vec, uint32_t size)
   {
     for (int i = 0; i < size; i++)
     {
-      std::cout << "index: " << i << " data " << vec[i] << std::endl;
+      std::cout << "index: " << i << " data: " << vec.at(i) << std::endl;
     }
-    return 0;
-  }*/
+    
+  }
   uint32_t countNumBytes(std::vector<uint8_t> buff)
   {
     return buff.size();
   }
+  
 }

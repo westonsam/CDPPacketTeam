@@ -1,6 +1,3 @@
 DUID:MAMA0003
-TOPIC:location
+TOPIC:
 DATA:Test Data String
-DATE:date
-TIME:time
-

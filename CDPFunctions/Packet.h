@@ -28,11 +28,11 @@
 #define DUCK_TYPE_POS 21
 #define HOP_COUNT_POS 22
 #define DATA_CRC_POS 23
-#define DATA_POS HEADER_LENGTH // Data section starts immediately after header
+#define DATA_POS 27 // Data section starts immediately after header
 
 #define RESERVED_LENGTH 2
 // #define MAX_PATH_LENGTH (MAX_HOPS * DUID_LENGTH)
-#define MAX_DATA_LENGTH (PACKET_LENGTH - HEADER_LENGTH)
+#define MAX_DATA_LENGTH 228
 // #define MAX_PATH_OFFSET (PACKET_LENGTH - DUID_LENGTH - 1)
 
 enum DuckType
@@ -117,6 +117,9 @@ static std::vector<uint8_t> BROADCAST_DUID = {0xFF, 0xFF, 0xFF, 0xFF,
 static std::vector<uint8_t> PAPADUCK_DUID = {0x50, 0x61, 0x70, 0x61,
                                              0x44, 0x75, 0x63, 0x6B};
 
+
+
+
 class Packet
 {
 public:
@@ -142,7 +145,7 @@ public:
 
     /// crc32 for the data section (4 bytes)
     std::uint32_t dcrc;
-
+    
     /// Data section
     std::vector<uint8_t> data;
 
@@ -173,13 +176,15 @@ public:
 
     vector<uint8_t> getDuckId() { return this->sduid = sduid; }
 
-    int prepareForSending(BloomFilter *filter, const vector<uint8_t> destinationId, uint8_t duckType, uint8_t topic, uint8_t hopCount, vector<uint8_t> data);
+    int prepareForSending(BloomFilter *filter, const vector<uint8_t> destinationId, uint8_t duckType, uint8_t Topic, uint8_t hopCount, vector<uint8_t> data);
 
     std::vector<uint8_t> getBuffer() { return buffer; };
 
     uint8_t getTopic() { return buffer[TOPIC_POS]; }
 
     void reset() { vector<uint8_t>().swap(buffer); }
+
+    //int decodePacket(vector<uint8_t> vec);
 
     static std::string topicToString(int topic)
     {
