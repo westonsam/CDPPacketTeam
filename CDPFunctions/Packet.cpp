@@ -8,6 +8,8 @@
 #include <cstdint>
 #include <chrono>
 #include <ctime>
+#include <iomanip>
+#include <sstream>
 
 using namespace std;
 
@@ -68,6 +70,7 @@ int Packet::prepareForSending(BloomFilter *filter, vector<uint8_t> dduid, uint8_
   buffer.insert(buffer.end(), &message_id[0], &message_id[MUID_LENGTH]);
   this->muid = muid;
 
+  // topic
   buffer.push_back(topic);
   this->topic = topic;
  
@@ -104,7 +107,7 @@ int Packet::prepareForSending(BloomFilter *filter, vector<uint8_t> dduid, uint8_
 
 int Packet::decodePacket(vector<uint8_t> cdpPayload){
 
-  auto start = std::chrono::system_clock::now();
+  //auto start = std::chrono::system_clock::now();
   
   vector<uint8_t> sduid;
   sduid = parseCDPPacket(SDUID_POS, DDUID_POS, cdpPayload);
@@ -140,9 +143,25 @@ int Packet::decodePacket(vector<uint8_t> cdpPayload){
   cout << "Recieved data CRC: " <<duckutils::convertToHex(dcrc.data(), dcrc.size()).c_str() << endl;
   cout << "Recieved data: " <<duckutils::convertToHex(data.data(), data.size()).c_str() << endl;
 
- auto end = std::chrono::system_clock::now();
+ /*auto end = std::chrono::system_clock::now();
  time_t end_time = std::chrono::system_clock::to_time_t(end);
- cout << "finished computation at " << ctime(&end_time);
+ std::tm* local_time = std::localtime(&end_time);
+ // Create a string stream to format the date and time
+    std::ostringstream date_stream;
+    std::ostringstream time_stream;
+
+    // Format date as YYYY-MM-DD
+    date_stream << std::put_time(local_time, "%Y-%m-%d");
+    std::string date_str = date_stream.str();
+
+    // Format time as HH:MM:SS
+    time_stream << std::put_time(local_time, "%H:%M:%S");
+    std::string time_str = time_stream.str();
+
+    // Output the results
+    std::cout << "Date: " << date_str << std::endl;
+    std::cout << "Time: " << time_str << std::endl;
+ //cout << "finished computation at " << ctime(&end_time);*/
 
  return 0;
 

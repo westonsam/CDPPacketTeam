@@ -82,6 +82,7 @@ int main()
 
     // Instantiate Packet Object
     Packet dp;
+    Packet dp2;
 
     // Set Duck ID
     dp.setDuckId(duckutils::convertStringToVector("PAPA0001"));
