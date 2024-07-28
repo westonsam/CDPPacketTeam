@@ -80,12 +80,12 @@ namespace duckutils
       return str;
   }
 
-  std::vector <uint8_t> convertNumToVector(uint32_t data) 
+  std::vector <uint8_t> convert32BitToVector(uint32_t data) 
   {
     std::vector<uint8_t> newData;
     for(int i=0; i < 4; i++)
     {
-      newData.push_back(data >> (24-(i*8)) & 0xFF);
+      newData.push_back((data & (0x000000FF << (i*8))) >> (i*8));
     }
     return newData;
   }

@@ -6,6 +6,8 @@
 #include <vector>
 #include <cstdlib>
 #include <cstdint>
+#include <chrono>
+#include <ctime>
 
 using namespace std;
 
@@ -27,7 +29,7 @@ void Packet::getMessageId(BloomFilter *filter, uint8_t message_id[MUID_LENGTH])
   }
 }
 
-int Packet::prepareForSending(BloomFilter *filter, vector<uint8_t> dduid, uint8_t Topic, uint8_t duckType, uint8_t hopCount, vector<uint8_t> data)
+int Packet::prepareForSending(BloomFilter *filter, vector<uint8_t> dduid, uint8_t topic, uint8_t duckType, uint8_t hopCount, vector<uint8_t> data)
 {
 
   int data_length = data.size();
@@ -60,32 +62,27 @@ int Packet::prepareForSending(BloomFilter *filter, vector<uint8_t> dduid, uint8_
 
   // destination device uid
   buffer.insert(buffer.end(), dduid.begin(), dduid.end());
-  //this->dduid = dduid;
-  duckutils::printVector(dduid, dduid.size());
+  this->dduid = dduid;
 
   // message uid
   buffer.insert(buffer.end(), &message_id[0], &message_id[MUID_LENGTH]);
-  //this->muid = muid;
+  this->muid = muid;
 
-  // topic
-  
-  buffer.push_back(Topic);
-  //this->topic = topic;
-  //cout << topic << endl;
-  
-
+  buffer.push_back(topic);
+  this->topic = topic;
+ 
   // duckType
   buffer.push_back(duckType);
-  //this->duckType = duckType;
+  this->duckType = duckType;
 
   // hop count
   buffer.push_back(hopCount);
-  //this->hopCount = hopCount;
+  this->hopCount = hopCount;
 
   // data crc
-  vector<uint8_t> dataCRC = duckutils::convertNumToVector(dcrc);
+  vector<uint8_t> dataCRC = duckutils::convert32BitToVector(dcrc);
   buffer.insert(buffer.end(), dataCRC.begin(), dataCRC.end());
-  //this->dcrc = dcrc;
+  this->dcrc = dcrc;
   
   // data
   buffer.insert(buffer.end(), data.begin(), data.end());
@@ -105,6 +102,61 @@ int Packet::prepareForSending(BloomFilter *filter, vector<uint8_t> dduid, uint8_
   return DUCK_ERR_NONE;
 }
 
+int Packet::decodePacket(vector<uint8_t> cdpPayload){
+
+  auto start = std::chrono::system_clock::now();
+  
+  vector<uint8_t> sduid;
+  sduid = parseCDPPacket(SDUID_POS, DDUID_POS, cdpPayload);
+  
+  vector<uint8_t> dduid;
+  dduid = parseCDPPacket(DDUID_POS, MUID_POS, cdpPayload);
+  
+  vector<uint8_t> muid;
+  muid = parseCDPPacket(MUID_POS, TOPIC_POS, cdpPayload);
+  
+  vector<uint8_t> topic;
+  topic = parseCDPPacket(TOPIC_POS, DUCK_TYPE_POS, cdpPayload);
+  
+  vector<uint8_t> duckType;
+  duckType = parseCDPPacket(DUCK_TYPE_POS, HOP_COUNT_POS, cdpPayload);
+  
+  vector<uint8_t> hopCount;
+  hopCount = parseCDPPacket(HOP_COUNT_POS, DATA_CRC_POS, cdpPayload);
+  
+  vector<uint8_t> dcrc;
+  dcrc = parseCDPPacket(DATA_CRC_POS, DATA_POS, cdpPayload);
+  
+  vector<uint8_t> data;
+  data = parseCDPPacket(DATA_POS, cdpPayload.size(), cdpPayload);
+  
+  // ----- print received packet -----
+  cout << "Recieved sduid: " << duckutils::convertToHex(sduid.data(), sduid.size()).c_str() << endl;
+  cout << "Recieved dduid: " <<duckutils::convertToHex(dduid.data(), dduid.size()).c_str() << endl;
+  cout << "Recieved muid: " <<duckutils::convertToHex(muid.data(), muid.size()).c_str() << endl;
+  cout << "Recieved topic: " << duckutils::convertToHex(topic.data(), topic.size()).c_str() << endl;
+  cout << "Recieved duckType: " << duckutils::convertToHex(duckType.data(), duckType.size()).c_str() << endl;
+  cout << "Recieved hopCount: " << duckutils::convertToHex(hopCount.data(), hopCount.size()).c_str() << endl;
+  cout << "Recieved data CRC: " <<duckutils::convertToHex(dcrc.data(), dcrc.size()).c_str() << endl;
+  cout << "Recieved data: " <<duckutils::convertToHex(data.data(), data.size()).c_str() << endl;
+
+ auto end = std::chrono::system_clock::now();
+ time_t end_time = std::chrono::system_clock::to_time_t(end);
+ cout << "finished computation at " << ctime(&end_time);
+
+ return 0;
+
+}
+
+vector<uint8_t> Packet::parseCDPPacket (uint8_t startPosition, uint8_t endPosition,vector<uint8_t> payload)
+{
+  vector<uint8_t> parsedVec;
+    for (uint8_t i = startPosition; i < endPosition; i++) {
+        parsedVec.push_back(payload.at(i));
+    }
+    return parsedVec;
+}
+
 void Packet::setDuckId(vector<uint8_t> duckId)
 {
   sduid = duckId;
@@ -114,9 +166,8 @@ void Packet::calculateCRC(vector<uint8_t> data)
 {
   std::vector<uint8_t> encryptedData;
   uint32_t value;
-  value = crc32<IEEE8023_CRC32_POLYNOMIAL>(0xFFFFFFFF, buffer.begin(), buffer.end());
+  value = crc32<IEEE8023_CRC32_POLYNOMIAL>(0xFFFFFFFF, data.begin(), data.end());
   dcrc = value;
-  
 }
 
 

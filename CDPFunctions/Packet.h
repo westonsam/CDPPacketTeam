@@ -178,6 +178,10 @@ public:
 
     int prepareForSending(BloomFilter *filter, const vector<uint8_t> destinationId, uint8_t duckType, uint8_t Topic, uint8_t hopCount, vector<uint8_t> data);
 
+    int decodePacket(vector<uint8_t> cdpPayload);
+    
+    vector<uint8_t> parseCDPPacket (uint8_t startPosition, uint8_t endPosition,vector<uint8_t> payload);
+
     std::vector<uint8_t> getBuffer() { return buffer; };
 
     uint8_t getTopic() { return buffer[TOPIC_POS]; }

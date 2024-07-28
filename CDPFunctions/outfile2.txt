@@ -1,3 +1,0 @@
-DUID:MAMA0003
-TOPIC:
-DATA:Test Data String
