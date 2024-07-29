@@ -17,5 +17,5 @@ namespace duckutils
         std::string convertVectorToString (std::vector<uint8_t> buffer);
         std::vector <uint8_t> convert32BitToVector(uint32_t data);
         uint32_t countNumBytes(std::vector<uint8_t> buff);
-        void printVector(std::vector<uint8_t> vec, uint32_t size);
+        void printVector(std::vector<uint8_t> vec);
 }

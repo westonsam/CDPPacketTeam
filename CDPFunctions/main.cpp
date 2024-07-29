@@ -70,6 +70,16 @@ vector<string> processInputFile(string input)
     return processed;
 }
 
+string modifystring (string cdp, int position) {
+
+        char lower4 = ((cdp[position] & 0x0F) + 48);
+        char upper4 = (((cdp[position] & 0xF0) >> 4) + 48);
+        //cdp.replace(position, 1, lower4);
+        cdp[position] = upper4;
+        //cdp[position+1] = upper4;
+        cdp.insert(position+1, 1, lower4);
+        return cdp;
+    }
 
 int main()
 {
@@ -82,7 +92,6 @@ int main()
 
     // Instantiate Packet Object
     Packet dp;
-    Packet dp2;
 
     // Set Duck ID
     dp.setDuckId(duckutils::convertStringToVector("PAPA0001"));
@@ -96,11 +105,24 @@ int main()
     //gets payload generated
     vector<uint8_t> payload = dp.getBuffer();
 
+    //duckutils::printVector(payload);
+
     //parses sections of received cdp payload
     dp.decodePacket(payload);
     
-    // Write formatted packet to output file
+    string CDP = duckutils::convertVectorToString(payload);
+
+    CDP = modifystring(CDP, TOPIC_POS);
+    CDP = modifystring(CDP, TOPIC_POS+2);
+    CDP = modifystring(CDP, TOPIC_POS + 4);
+    CDP = modifystring(CDP, TOPIC_POS + 6);
+    CDP = modifystring(CDP, TOPIC_POS + 8);
+    
+    cout << "CDP packet as a string: " << CDP << endl;
+    
+    // Write formatted packet to output file in hex
     string cdpPacket = duckutils::convertToHex(dp.getBuffer().data(), dp.getBuffer().size()).c_str();
+    cout << "CDP packet in hex: " << cdpPacket << endl;
     cout << "(SHOULD MATCH OUTFILE.TXT)" << endl;
     writeFile("outfile.txt", cdpPacket);
 
