@@ -88,6 +88,7 @@ int Packet::prepareForSending(BloomFilter *filter, vector<uint8_t> dduid, uint8_
   this->dcrc = dcrc;
   
   // data
+  //buffer.push_back(0x00);//for duck commands set to 0 for now
   buffer.insert(buffer.end(), data.begin(), data.end());
 
   // ----- print packet -----
@@ -105,45 +106,62 @@ int Packet::prepareForSending(BloomFilter *filter, vector<uint8_t> dduid, uint8_
   return DUCK_ERR_NONE;
 }
 
-int Packet::decodePacket(vector<uint8_t> cdpPayload){
+vector<string> Packet::decodePacket(vector<uint8_t> cdpPayload){
 
   //auto start = std::chrono::system_clock::now();
   
-  vector<uint8_t> sduid;
+  //vector<uint8_t> sduid;
   sduid = parseCDPPacket(SDUID_POS, DDUID_POS, cdpPayload);
   
-  vector<uint8_t> dduid;
+  //vector<uint8_t> dduid;
   dduid = parseCDPPacket(DDUID_POS, MUID_POS, cdpPayload);
   
-  vector<uint8_t> muid;
+  //vector<uint8_t> muid;
   muid = parseCDPPacket(MUID_POS, TOPIC_POS, cdpPayload);
+  //muid = cdpPayload.at(MUID_POS);
   
-  vector<uint8_t> topic;
-  topic = parseCDPPacket(TOPIC_POS, DUCK_TYPE_POS, cdpPayload);
+  //vector<uint8_t> topic;
+  //topic = parseCDPPacket(TOPIC_POS, DUCK_TYPE_POS, cdpPayload);
+  topic = cdpPayload.at(TOPIC_POS);
   
   vector<uint8_t> duckType;
   duckType = parseCDPPacket(DUCK_TYPE_POS, HOP_COUNT_POS, cdpPayload);
   
-  vector<uint8_t> hopCount;
-  hopCount = parseCDPPacket(HOP_COUNT_POS, DATA_CRC_POS, cdpPayload);
+  //vector<uint8_t> hopCount;
+  //hopCount = parseCDPPacket(HOP_COUNT_POS, DATA_CRC_POS, cdpPayload);
+  hopCount = cdpPayload.at(HOP_COUNT_POS);
   
-  vector<uint8_t> dcrc;
-  dcrc = parseCDPPacket(DATA_CRC_POS, DATA_POS, cdpPayload);
+  //vector<uint8_t> dcrc;
+  dcrc = duckutils::toUint32(parseCDPPacket(DATA_CRC_POS, DATA_POS, cdpPayload));
   
-  vector<uint8_t> data;
+  //vector<uint8_t> data;
   data = parseCDPPacket(DATA_POS, cdpPayload.size(), cdpPayload);
-  
-  // ----- print received packet -----
-  cout << "Recieved sduid: " << duckutils::convertToHex(sduid.data(), sduid.size()).c_str() << endl;
-  cout << "Recieved dduid: " <<duckutils::convertToHex(dduid.data(), dduid.size()).c_str() << endl;
-  cout << "Recieved muid: " <<duckutils::convertToHex(muid.data(), muid.size()).c_str() << endl;
-  cout << "Recieved topic: " << duckutils::convertToHex(topic.data(), topic.size()).c_str() << endl;
-  cout << "Recieved duckType: " << duckutils::convertToHex(duckType.data(), duckType.size()).c_str() << endl;
-  cout << "Recieved hopCount: " << duckutils::convertToHex(hopCount.data(), hopCount.size()).c_str() << endl;
-  cout << "Recieved data CRC: " <<duckutils::convertToHex(dcrc.data(), dcrc.size()).c_str() << endl;
-  cout << "Recieved data: " <<duckutils::convertToHex(data.data(), data.size()).c_str() << endl;
 
- /*auto end = std::chrono::system_clock::now();
+
+  //TODO: update calculateCRC for data section to check if data is different from what was recieved
+  
+
+
+  const string bufferString = duckutils::convertToHex(buffer.data(), buffer.size()).c_str();
+
+  cout << "SDuid:        " << duckutils::convertToHex(sduid.data(), sduid.size()).c_str() << endl;
+  cout << "DDuid:        " << duckutils::convertToHex(dduid.data(), dduid.size()).c_str() << endl;
+  cout << "Muid:         " << bufferString.substr(MUID_POS * 2, (TOPIC_POS - MUID_POS) * 2) << endl;
+  cout << "Topic:        " << bufferString.substr((TOPIC_POS) * 2, (DUCK_TYPE_POS - TOPIC_POS) * 2) << endl;
+  cout << "Duck Type:    " << bufferString.substr((DUCK_TYPE_POS) * 2, (HOP_COUNT_POS - DUCK_TYPE_POS) * 2) << endl;
+  cout << "Hop Count:    " << bufferString.substr((HOP_COUNT_POS) * 2, (DATA_CRC_POS - HOP_COUNT_POS) * 2) << endl;
+  cout << "Data CRC:     " << bufferString.substr((DATA_CRC_POS) * 2, (DATA_POS - DATA_CRC_POS) * 2) << endl;
+  cout << "Data:         " << bufferString.substr(DATA_POS * 2) << endl;
+  cout << "Built packet: " << duckutils::convertToHex(buffer.data(), buffer.size()).c_str() << endl;
+
+  vector<string> processOutput(5);
+  processOutput[0] = duckutils::convertVectorToString(dduid);
+  processOutput[1] = Packet::topicToString(topic);
+  processOutput[2] = duckutils::convertVectorToString(data);
+
+  
+
+ auto end = std::chrono::system_clock::now();
  time_t end_time = std::chrono::system_clock::to_time_t(end);
  std::tm* local_time = std::localtime(&end_time);
  // Create a string stream to format the date and time
@@ -151,19 +169,22 @@ int Packet::decodePacket(vector<uint8_t> cdpPayload){
     std::ostringstream time_stream;
 
     // Format date as YYYY-MM-DD
-    date_stream << std::put_time(local_time, "%Y-%m-%d");
-    std::string date_str = date_stream.str();
+    date_stream << std::put_time(local_time, "%m-%d-%Y");
+    std::string date = date_stream.str();
 
     // Format time as HH:MM:SS
     time_stream << std::put_time(local_time, "%H:%M:%S");
-    std::string time_str = time_stream.str();
+    std::string time = time_stream.str();
 
     // Output the results
-    std::cout << "Date: " << date_str << std::endl;
-    std::cout << "Time: " << time_str << std::endl;
- //cout << "finished computation at " << ctime(&end_time);*/
+    std::cout << "Date: " << date << std::endl;
+    std::cout << "Time: " << time << std::endl;
+ //cout << "finished computation at " << ctime(&end_time);
+  processOutput[3] =date;
+  processOutput[4] =time;
 
- return 0;
+
+ return processOutput;
 
 }
 
@@ -179,6 +200,11 @@ vector<uint8_t> Packet::parseCDPPacket (uint8_t startPosition, uint8_t endPositi
 void Packet::setDuckId(vector<uint8_t> duckId)
 {
   sduid = duckId;
+}
+
+void Packet::setBuffer(vector<uint8_t> packet)
+{
+  buffer = packet;
 }
 
 void Packet::calculateCRC(vector<uint8_t> data)

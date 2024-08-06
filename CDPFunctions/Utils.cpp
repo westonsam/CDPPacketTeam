@@ -49,7 +49,16 @@ namespace duckutils
     }
     return buf;
   }
+  uint32_t toUint32(std::vector<uint8_t> data)
+  {
+    uint32_t value = 0;
 
+    value |= data[0] << 24;
+    value |= data[1] << 16;
+    value |= data[2] << 8;
+    value |= data[3];
+    return value;
+  }
   uint32_t toUint32(const uint8_t *data)
   {
     uint32_t value = 0;

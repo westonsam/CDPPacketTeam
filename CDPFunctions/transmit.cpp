@@ -35,12 +35,6 @@ string readFile(string filename)
         data += line;
     }
     fin.close();
-    /*if (remove(filename) != 0) {
-        std::cerr << "Error deleting file: " << filename << std::endl;
-        return 1;
-    } else {
-        std::cout << "File deleted successfully: " << filename << std::endl;
-    }*/
     return data;
 }
 
@@ -58,19 +52,6 @@ void writeFile(string filename, string TxData)
     fout.close();
 }
 
-void writeFileWebServer (string filename, vector<string> TxData) {
-    ofstream fout;
-    fout.open(filename);
-    if (!fout.is_open())
-    {
-        cout << "Output file failed to open." << endl;
-        exit(EXIT_FAILURE);
-    }
-    fout<< "DDUID:" << TxData[0] << endl;
-    fout << "Topic:" << TxData[1] << endl;
-    fout<< "Data:" << TxData[2] <<endl;
-    fout.close();
-}
 
 vector<string> processInputFile(string input)
 {
@@ -90,16 +71,6 @@ vector<string> processInputFile(string input)
     return processed;
 }
 
-/*string modifystring (string cdp, int position) {
-
-        char lower4 = ((cdp[position] & 0x0F) + 48);
-        char upper4 = (((cdp[position] & 0xF0) >> 4) + 48);
-        //cdp.replace(position, 1, lower4);
-        cdp[position] = upper4;
-        //cdp[position+1] = upper4;
-        cdp.insert(position+1, 1, lower4);
-        return cdp;
-    }*/
 
 int main()
 {
@@ -114,7 +85,7 @@ int main()
     Packet dp;
 
     // Set Duck ID
-    dp.setDuckId(duckutils::convertStringToVector("PAPA0001"));
+    dp.setDuckId(duckutils::convertStringToVector("DUCK0001"));
 
     // Create BloomFilter
     BloomFilter filter = BloomFilter(DEFAULT_NUM_SECTORS, DEFAULT_NUM_HASH_FUNCS, DEFAULT_BITS_PER_SECTOR, DEFAULT_MAX_MESSAGES);
@@ -125,17 +96,7 @@ int main()
     //gets payload generated
     vector<uint8_t> payload = dp.getBuffer();
 
-
-    //parses sections of received cdp payload
-    vector<string> outputFileData = dp.decodePacket(payload);
-
     string CDP = duckutils::convertVectorToString(payload);
-
-    //CDP = modifystring(CDP, TOPIC_POS);
-    //CDP = modifystring(CDP, TOPIC_POS+2);
-    //CDP = modifystring(CDP, TOPIC_POS + 4);
-    //CDP = modifystring(CDP, TOPIC_POS + 6);
-    //CDP = modifystring(CDP, TOPIC_POS + 8);
 
     cout << "CDP packet as a string: " << CDP << endl;
 
@@ -145,7 +106,6 @@ int main()
     cout << "(SHOULD MATCH OUTFILE.TXT)" << endl;
     writeFile("forRadio.txt", CDP);
 
-    writeFileWebServer("outfile.txt", outputFileData);
 
     return 0;
 }
