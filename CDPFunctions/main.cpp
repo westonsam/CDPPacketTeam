@@ -90,16 +90,56 @@ vector<string> processInputFile(string input)
     return processed;
 }
 
-/*string modifystring (string cdp, int position) {
+string modifystring (string cdp, int position) {
+        char lower4;
+        char upper4;
+        if(((cdp[position] & 0x0F) + 48) > 57){
+            lower4 = ((cdp[position] & 0x0F) + 55);
+        }
+        else{
+            lower4 = ((cdp[position] & 0x0F) + 48);
+        }
+       
+        if ((((cdp[position] & 0xF0) >> 4) + 48) > 57){
+            upper4 = (((cdp[position] & 0xF0) >> 4) + 55);
+        }
+        else{
+            upper4 = (((cdp[position] & 0xF0) >> 4) + 48);
+        }
 
-        char lower4 = ((cdp[position] & 0x0F) + 48);
-        char upper4 = (((cdp[position] & 0xF0) >> 4) + 48);
-        //cdp.replace(position, 1, lower4);
         cdp[position] = upper4;
-        //cdp[position+1] = upper4;
+        
         cdp.insert(position+1, 1, lower4);
         return cdp;
-    }*/
+    }
+
+string unmodifyString (string cdp, int position){
+    char aByte;
+    if(cdp[position] > 57 && cdp[position+1] > 57 ){
+        aByte = (((cdp[position] -55) << 4) &0xF0) | ((cdp[position+1]-55) & 0x0F);
+        //aByte = (cdp[position] - 55)  << 4;
+    }
+    else if (cdp[position] > 57 && cdp[position+1] <57)
+    {
+        aByte = (((cdp[position] -55) << 4) &0xF0) | ((cdp[position+1]-48) & 0x0F);
+    }
+    else if (cdp[position] < 57 && cdp[position+1] >57)
+    {
+        aByte = (((cdp[position] -48) << 4) &0xF0) | ((cdp[position+1]-55) & 0x0F);
+    }
+    else{
+        aByte = (((cdp[position]-48) << 4) & 0xF0) | ((cdp[position+1]-48) &0x0F);
+        //aByte = (cdp[position] -48) << 4;
+    }
+    cout << aByte << endl;
+    cdp[position]= aByte;
+    cdp.erase(position+1, 1);
+    return cdp;
+
+}
+
+
+   
 
 int main()
 {
@@ -131,20 +171,43 @@ int main()
 
     string CDP = duckutils::convertVectorToString(payload);
 
-    //CDP = modifystring(CDP, TOPIC_POS);
-    //CDP = modifystring(CDP, TOPIC_POS+2);
-    //CDP = modifystring(CDP, TOPIC_POS + 4);
-    //CDP = modifystring(CDP, TOPIC_POS + 6);
-    //CDP = modifystring(CDP, TOPIC_POS + 8);
+    cout << "CDP packet as a string: " << CDP << endl;
+    writeFile("forRadio2.txt", CDP);
+
+
+    //makes sure any unprintable characters in the payload come out as hex values
+    for(int i = 0; i < 14; i=i+2)
+    {
+        CDP = modifystring(CDP, TOPIC_POS+i);
+    }
 
     cout << "CDP packet as a string: " << CDP << endl;
+    for(int i = 0; i < 7; i++)
+    {
+        CDP = unmodifyString(CDP, TOPIC_POS+i);
+    }
+    
+   
+    dp.setBuffer(duckutils::convertStringToVector(CDP));
+    vector<string> test = dp.decodePacket(duckutils::convertStringToVector(CDP));
+    //CDP = unmodifyString(CDP, TOPIC_POS+7);
+    //CDP = unmodifyString(CDP, TOPIC_POS+8);
+
+    cout << "CDP packet as a string: " << CDP << endl;
+    //cout << duckutils::convertToHex(duckutils::convertStringToVector(CDP), CDP.size()) << endl;
 
     // Write formatted packet to output file in hex
     string cdpPacket = duckutils::convertToHex(dp.getBuffer().data(), dp.getBuffer().size()).c_str();
+
+//tests decoding from hex works 
+    vector<uint8_t> testUndoHex = duckutils::convertFromHex(cdpPacket);
+    duckutils::printVector(testUndoHex);
+
+
     cout << "CDP packet in hex: " << cdpPacket << endl;
     cout << "(SHOULD MATCH OUTFILE.TXT)" << endl;
     writeFile("forRadio.txt", CDP);
-
+    
     writeFileWebServer("outfile.txt", outputFileData);
 
     return 0;

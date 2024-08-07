@@ -71,6 +71,29 @@ vector<string> processInputFile(string input)
     return processed;
 }
 
+string modifystring (string cdp, int position) {
+        char lower4;
+        char upper4;
+        if(((cdp[position] & 0x0F) + 48) > 57){
+            lower4 = ((cdp[position] & 0x0F) + 55);
+        }
+        else{
+            lower4 = ((cdp[position] & 0x0F) + 48);
+        }
+       
+        if ((((cdp[position] & 0xF0) >> 4) + 48) > 57){
+            upper4 = (((cdp[position] & 0xF0) >> 4) + 55);
+        }
+        else{
+            upper4 = (((cdp[position] & 0xF0) >> 4) + 48);
+        }
+
+        cdp[position] = upper4;
+        
+        cdp.insert(position+1, 1, lower4);
+        return cdp;
+    }
+
 
 int main()
 {
@@ -99,6 +122,14 @@ int main()
     string CDP = duckutils::convertVectorToString(payload);
 
     cout << "CDP packet as a string: " << CDP << endl;
+
+    //makes sure any unprintable characters in the payload come out as hex values
+    for(int i = 0; i < 14; i=i+2)
+    {
+        CDP = modifystring(CDP, TOPIC_POS+i);
+    }
+
+    cout << "CDP packet as a string modified: " << CDP << endl;
 
     // Write formatted packet to output file in hex
     string cdpPacket = duckutils::convertToHex(dp.getBuffer().data(), dp.getBuffer().size()).c_str();

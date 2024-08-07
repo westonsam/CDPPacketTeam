@@ -49,6 +49,36 @@ namespace duckutils
     }
     return buf;
   }
+  std::vector<uint8_t> convertFromHex(const std::string& hexString) {
+    // Ensure the input string has an even length
+    if (hexString.length() % 2 != 0) {
+        throw std::invalid_argument("Hexadecimal string must have an even length.");
+    }
+
+    std::vector<uint8_t> bytes;
+    bytes.reserve(hexString.length() / 2); // Reserve space for bytes
+
+    // Function to convert a single hexadecimal character to its numeric value
+    auto hexCharToValue = [](char c) -> uint8_t {
+        if (c >= '0' && c <= '9') {
+            return c - '0';
+        } else if (c >= 'A' && c <= 'F') {
+            return c - 'A' + 10;
+        } else if (c >= 'a' && c <= 'f') {
+            return c - 'a' + 10;
+        }
+        throw std::invalid_argument("Invalid hexadecimal character.");
+    };
+
+    for (size_t i = 0; i < hexString.length(); i += 2) {
+        // Convert each pair of hex characters to a byte
+        uint8_t highNibble = hexCharToValue(hexString[i]);
+        uint8_t lowNibble = hexCharToValue(hexString[i + 1]);
+        bytes.push_back((highNibble << 4) | lowNibble);
+    }
+
+    return bytes;
+}
   uint32_t toUint32(std::vector<uint8_t> data)
   {
     uint32_t value = 0;

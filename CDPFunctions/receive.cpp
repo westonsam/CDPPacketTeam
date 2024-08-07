@@ -13,45 +13,10 @@
 
 using namespace std;
 
-string readFile(string filename);
-void writeFile(string filename, vector<uint8_t> RxData);
-vector<string> processInputFile(string input);
 
 
-string readFile(const string filename)
-{
-    ifstream fin;
-    string data = "";
-    fin.open(filename);
-    if (!fin.is_open())
-    {
-        cout << "Input file failed to open.\n";
-        return "Fail";
-        exit(EXIT_FAILURE);
-    }
-    string line;
-    while (getline(fin, line))
-    {
-        data += line;
-    }
-    fin.close();
 
-    return data;
-}
 
-void writeFile(string filename, string TxData)
-{
-    ofstream fout;
-
-    fout.open(filename);
-    if (!fout.is_open())
-    {
-        cout << "Output file failed to open." << endl;
-        exit(EXIT_FAILURE);
-    }
-    fout << TxData << endl;
-    fout.close();
-}
 
 void writeFileWebServer (string filename, vector<string> TxData) {
     ofstream fout;
@@ -69,22 +34,30 @@ void writeFileWebServer (string filename, vector<string> TxData) {
     fout.close();
 }
 
-vector<string> processInputFile(string input)
-{
-    // Split input data by section
-    string DDUID, TOPIC, DATA;
-    DDUID = input.substr(input.find("DUID:"), input.find("TOPIC:")).substr(5);
-    TOPIC = input.substr(input.find("TOPIC:"), input.find("DATA:") - input.find("TOPIC:")).substr(6);
-    DATA = input.substr(input.find("DATA:"), input.find("DATE:") - input.find("DATA:")).substr(5);
-    vector<string> processed = {DDUID, TOPIC, DATA};
 
-    // Print Processed Data
-    cout << "PROCESSED INPUT FILE:" << endl;
-    cout << processed[0] << endl;
-    cout << processed[1] << endl;
-    cout << processed[2] << endl;
-    cout << endl;
-    return processed;
+string unmodifyString (string cdp, int position){
+    char aByte;
+    if(cdp[position] > 57 && cdp[position+1] > 57 ){
+        aByte = (((cdp[position] -55) << 4) &0xF0) | ((cdp[position+1]-55) & 0x0F);
+        //aByte = (cdp[position] - 55)  << 4;
+    }
+    else if (cdp[position] > 57 && cdp[position+1] <57)
+    {
+        aByte = (((cdp[position] -55) << 4) &0xF0) | ((cdp[position+1]-48) & 0x0F);
+    }
+    else if (cdp[position] < 57 && cdp[position+1] >57)
+    {
+        aByte = (((cdp[position] -48) << 4) &0xF0) | ((cdp[position+1]-55) & 0x0F);
+    }
+    else{
+        aByte = (((cdp[position]-48) << 4) & 0xF0) | ((cdp[position+1]-48) &0x0F);
+        //aByte = (cdp[position] -48) << 4;
+    }
+    cout << aByte << endl;
+    cdp[position]= aByte;
+    cdp.erase(position+1, 1);
+    return cdp;
+
 }
 
 
@@ -94,9 +67,16 @@ int main()
     // Instantiate Packet Object
     Packet dp;
 
-    vector<uint8_t> packetRecieved(24);
-    packetRecieved = {'P', 'A', 'P', 'A' , 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A' , 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A' , 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A'};
+    vector<uint8_t> packetRecieved;
+    //packetRecieved = {'P', 'A', 'P', 'A' , 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A' , 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A' , 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A'};
+    string CDP = "PAPA0001MAMA0003ADB3100200ACE57C36Test Data String";
 
+    for(int i = 0; i < 7; i++)
+    {
+        CDP = unmodifyString(CDP, TOPIC_POS+i);
+    }
+
+    packetRecieved = duckutils::convertStringToVector(CDP);
     dp.setBuffer(packetRecieved);
 
     //gets payload generated
@@ -107,7 +87,7 @@ int main()
     vector<string> outputFileData;
     outputFileData = dp.decodePacket(payload);
 
-    string CDP = duckutils::convertVectorToString(payload);
+    CDP = duckutils::convertVectorToString(payload);
 
     cout << "CDP packet as a string: " << CDP << endl;
 

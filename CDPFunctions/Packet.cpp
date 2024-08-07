@@ -144,15 +144,15 @@ vector<string> Packet::decodePacket(vector<uint8_t> cdpPayload){
 
   const string bufferString = duckutils::convertToHex(buffer.data(), buffer.size()).c_str();
 
-  cout << "SDuid:        " << duckutils::convertToHex(sduid.data(), sduid.size()).c_str() << endl;
-  cout << "DDuid:        " << duckutils::convertToHex(dduid.data(), dduid.size()).c_str() << endl;
-  cout << "Muid:         " << bufferString.substr(MUID_POS * 2, (TOPIC_POS - MUID_POS) * 2) << endl;
-  cout << "Topic:        " << bufferString.substr((TOPIC_POS) * 2, (DUCK_TYPE_POS - TOPIC_POS) * 2) << endl;
-  cout << "Duck Type:    " << bufferString.substr((DUCK_TYPE_POS) * 2, (HOP_COUNT_POS - DUCK_TYPE_POS) * 2) << endl;
-  cout << "Hop Count:    " << bufferString.substr((HOP_COUNT_POS) * 2, (DATA_CRC_POS - HOP_COUNT_POS) * 2) << endl;
-  cout << "Data CRC:     " << bufferString.substr((DATA_CRC_POS) * 2, (DATA_POS - DATA_CRC_POS) * 2) << endl;
-  cout << "Data:         " << bufferString.substr(DATA_POS * 2) << endl;
-  cout << "Built packet: " << duckutils::convertToHex(buffer.data(), buffer.size()).c_str() << endl;
+  cout << "Received SDuid:        " << duckutils::convertToHex(sduid.data(), sduid.size()).c_str() << endl;
+  cout << "Received DDuid:        " << duckutils::convertToHex(dduid.data(), dduid.size()).c_str() << endl;
+  cout << "Received Muid:         " << bufferString.substr(MUID_POS * 2, (TOPIC_POS - MUID_POS) * 2) << endl;
+  cout << "Received Topic:        " << bufferString.substr((TOPIC_POS) * 2, (DUCK_TYPE_POS - TOPIC_POS) * 2) << endl;
+  cout << "Received Duck Type:    " << bufferString.substr((DUCK_TYPE_POS) * 2, (HOP_COUNT_POS - DUCK_TYPE_POS) * 2) << endl;
+  cout << "Received Hop Count:    " << bufferString.substr((HOP_COUNT_POS) * 2, (DATA_CRC_POS - HOP_COUNT_POS) * 2) << endl;
+  cout << "Received Data CRC:     " << bufferString.substr((DATA_CRC_POS) * 2, (DATA_POS - DATA_CRC_POS) * 2) << endl;
+  cout << "Received Data:         " << bufferString.substr(DATA_POS * 2) << endl;
+  cout << "Received Built packet: " << duckutils::convertToHex(buffer.data(), buffer.size()).c_str() << endl;
 
   vector<string> processOutput(5);
   processOutput[0] = duckutils::convertVectorToString(dduid);
@@ -164,11 +164,11 @@ vector<string> Packet::decodePacket(vector<uint8_t> cdpPayload){
  auto end = std::chrono::system_clock::now();
  time_t end_time = std::chrono::system_clock::to_time_t(end);
  std::tm* local_time = std::localtime(&end_time);
- // Create a string stream to format the date and time
+ 
     std::ostringstream date_stream;
     std::ostringstream time_stream;
 
-    // Format date as YYYY-MM-DD
+    // Format date as M/D/Y
     date_stream << std::put_time(local_time, "%m-%d-%Y");
     std::string date = date_stream.str();
 

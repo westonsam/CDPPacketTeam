@@ -19,4 +19,5 @@ namespace duckutils
         uint32_t countNumBytes(std::vector<uint8_t> buff);
         void printVector(std::vector<uint8_t> vec);
         uint32_t toUint32(std::vector<uint8_t> data);
+        std::vector<uint8_t> convertFromHex(const std::string& hexString);
 }
