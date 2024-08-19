@@ -71,7 +71,7 @@ vector<string> processInputFile(string input)
     return processed;
 }
 
-string modifystring (string cdp, int position) {
+/*string modifystring (string cdp, int position) {
         char lower4;
         char upper4;
         if(((cdp[position] & 0x0F) + 48) > 57){
@@ -92,8 +92,18 @@ string modifystring (string cdp, int position) {
         
         cdp.insert(position+1, 1, lower4);
         return cdp;
+    }*/
+string modifystring (string cdp, int position){
+    /*if(cdp[position] > 9){
+        cdp[position] = cdp[position] + 55;
     }
-
+    else{
+        cdp[position] = cdp[position] + 48;
+    }*/
+    //cdp[position] = 
+    cdp[position] = cdp[position] + 32;
+    return cdp;
+}
 
 int main()
 {
@@ -110,11 +120,13 @@ int main()
     // Set Duck ID
     dp.setDuckId(duckutils::convertStringToVector("DUCK0001"));
 
+    //dp.setType(DuckType::LINK);
+
     // Create BloomFilter
     BloomFilter filter = BloomFilter(DEFAULT_NUM_SECTORS, DEFAULT_NUM_HASH_FUNCS, DEFAULT_BITS_PER_SECTOR, DEFAULT_MAX_MESSAGES);
 
     // Create formatted CDP packet in the buffer property of dp object
-    dp.prepareForSending(&filter, dduid, topic, DuckType::MAMA, 0x00, data);
+    dp.prepareForSending(&filter, dduid, topic, 1, 0x00, data);
 
     //gets payload generated
     vector<uint8_t> payload = dp.getBuffer();
@@ -124,7 +136,7 @@ int main()
     cout << "CDP packet as a string: " << CDP << endl;
 
     //makes sure any unprintable characters in the payload come out as hex values
-    for(int i = 0; i < 14; i=i+2)
+    for(int i = 0; i < 7; i=i+1)
     {
         CDP = modifystring(CDP, TOPIC_POS+i);
     }

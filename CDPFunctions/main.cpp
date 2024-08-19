@@ -7,208 +7,172 @@
 #include <stdexcept>
 #include <chrono>
 #include <ctime>
+#include <unistd.h>
 #include "Packet.h"
 #include "BloomFilter.h"
 #include "Utils.h"
+#include "DuckLink.h"
+//#include "MamaDuck.h"
+//#include "PapaDuck.h"
+//#include "DetectorDuck.h"
+#include "redis.h"
 
 using namespace std;
 
-string readFile(string filename);
-void writeFile(string filename, vector<uint8_t> RxData);
-vector<string> processInputFile(string input);
 
 
-string readFile(string filename)
-{
-    ifstream fin;
-    string data = "";
-    fin.open(filename);
-    if (!fin.is_open())
-    {
-        cout << "Input file failed to open.\n";
-        return "Fail";
-        exit(EXIT_FAILURE);
-    }
-    string line;
-    while (getline(fin, line))
-    {
-        data += line;
-    }
-    fin.close();
-    /*if (remove(filename) != 0) {
-        std::cerr << "Error deleting file: " << filename << std::endl;
-        return 1;
-    } else {
-        std::cout << "File deleted successfully: " << filename << std::endl;
-    }*/
+string extractValue(const std::string& input, const std::string& key) {
+    string::size_type startPos = input.find(key);
+    if (startPos == std::string::npos) return"";  // Key not found
+    
+    startPos += key.length();  // Move past the key
+    std::string::size_type endPos = input.find(' ', startPos);
+    if (endPos == std::string::npos) endPos = input.length();  
+    string data = input.substr(startPos, endPos - startPos);
     return data;
 }
 
-void writeFile(string filename, string TxData)
-{
-    ofstream fout;
 
-    fout.open(filename);
-    if (!fout.is_open())
-    {
-        cout << "Output file failed to open." << endl;
-        exit(EXIT_FAILURE);
-    }
-    fout << TxData << endl;
-    fout.close();
-}
-
-void writeFileWebServer (string filename, vector<string> TxData) {
-    ofstream fout;
-    fout.open(filename);
-    if (!fout.is_open())
-    {
-        cout << "Output file failed to open." << endl;
-        exit(EXIT_FAILURE);
-    }
-    fout<< "DDUID:" << TxData[0] << endl;
-    fout << "Topic:" << TxData[1] << endl;
-    fout<< "Data:" << TxData[2] <<endl;
-    fout.close();
-}
-
-vector<string> processInputFile(string input)
-{
-    // Split input data by section
-    string DDUID, TOPIC, DATA;
-    DDUID = input.substr(input.find("DUID:"), input.find("TOPIC:")).substr(5);
-    TOPIC = input.substr(input.find("TOPIC:"), input.find("DATA:") - input.find("TOPIC:")).substr(6);
-    DATA = input.substr(input.find("DATA:"), input.find("DATE:") - input.find("DATA:")).substr(5);
-    vector<string> processed = {DDUID, TOPIC, DATA};
-
-    // Print Processed Data
-    cout << "PROCESSED INPUT FILE:" << endl;
-    cout << processed[0] << endl;
-    cout << processed[1] << endl;
-    cout << processed[2] << endl;
-    cout << endl;
-    return processed;
-}
-
-string modifystring (string cdp, int position) {
-        char lower4;
-        char upper4;
-        if(((cdp[position] & 0x0F) + 48) > 57){
-            lower4 = ((cdp[position] & 0x0F) + 55);
-        }
-        else{
-            lower4 = ((cdp[position] & 0x0F) + 48);
-        }
-       
-        if ((((cdp[position] & 0xF0) >> 4) + 48) > 57){
-            upper4 = (((cdp[position] & 0xF0) >> 4) + 55);
-        }
-        else{
-            upper4 = (((cdp[position] & 0xF0) >> 4) + 48);
-        }
-
-        cdp[position] = upper4;
-        
-        cdp.insert(position+1, 1, lower4);
-        return cdp;
-    }
-
-string unmodifyString (string cdp, int position){
-    char aByte;
-    if(cdp[position] > 57 && cdp[position+1] > 57 ){
-        aByte = (((cdp[position] -55) << 4) &0xF0) | ((cdp[position+1]-55) & 0x0F);
-        //aByte = (cdp[position] - 55)  << 4;
-    }
-    else if (cdp[position] > 57 && cdp[position+1] <57)
-    {
-        aByte = (((cdp[position] -55) << 4) &0xF0) | ((cdp[position+1]-48) & 0x0F);
-    }
-    else if (cdp[position] < 57 && cdp[position+1] >57)
-    {
-        aByte = (((cdp[position] -48) << 4) &0xF0) | ((cdp[position+1]-55) & 0x0F);
-    }
-    else{
-        aByte = (((cdp[position]-48) << 4) & 0xF0) | ((cdp[position+1]-48) &0x0F);
-        //aByte = (cdp[position] -48) << 4;
-    }
-    cout << aByte << endl;
-    cdp[position]= aByte;
-    cdp.erase(position+1, 1);
-    return cdp;
-
-}
-
-
-   
+   struct StreamInfo {
+    const char* mystream;
+    const char* key;
+    const char* message;
+    const char* group_name;
+};
 
 int main()
 {
-    // Read from input file
-    string inputData = readFile("infile.txt");
-    vector<string> processed = processInputFile(inputData);
-    vector<uint8_t> dduid = duckutils::convertStringToVector(processed[0]);
-    uint8_t topic = Packet::stringToTopic(processed[1]);
-    vector<uint8_t> data = duckutils::convertStringToVector(processed[2]);
 
-    // Instantiate Packet Object
-    Packet dp;
-
-    // Set Duck ID
-    dp.setDuckId(duckutils::convertStringToVector("PAPA0001"));
-
-    // Create BloomFilter
-    BloomFilter filter = BloomFilter(DEFAULT_NUM_SECTORS, DEFAULT_NUM_HASH_FUNCS, DEFAULT_BITS_PER_SECTOR, DEFAULT_MAX_MESSAGES);
-
-    // Create formatted CDP packet in the buffer property of dp object
-    dp.prepareForSending(&filter, dduid, topic, DuckType::MAMA, 0x00, data);
-
-    //gets payload generated
-    vector<uint8_t> payload = dp.getBuffer();
-
-
-    //parses sections of received cdp payload
-    vector<string> outputFileData = dp.decodePacket(payload);
-
-    string CDP = duckutils::convertVectorToString(payload);
-
-    cout << "CDP packet as a string: " << CDP << endl;
-    writeFile("forRadio2.txt", CDP);
-
-
-    //makes sure any unprintable characters in the payload come out as hex values
-    for(int i = 0; i < 14; i=i+2)
-    {
-        CDP = modifystring(CDP, TOPIC_POS+i);
-    }
-
-    cout << "CDP packet as a string: " << CDP << endl;
-    for(int i = 0; i < 7; i++)
-    {
-        CDP = unmodifyString(CDP, TOPIC_POS+i);
-    }
     
    
-    dp.setBuffer(duckutils::convertStringToVector(CDP));
-    vector<string> test = dp.decodePacket(duckutils::convertStringToVector(CDP));
-    //CDP = unmodifyString(CDP, TOPIC_POS+7);
-    //CDP = unmodifyString(CDP, TOPIC_POS+8);
 
-    cout << "CDP packet as a string: " << CDP << endl;
-    //cout << duckutils::convertToHex(duckutils::convertStringToVector(CDP), CDP.size()) << endl;
+//////connect redis server
+redisContext* redisConnect = redis_init("localhost", 6379);
+const char* mystream = "mystream";
+	const char* key = "WEB_CDP";
+	const char* value = "DUID:MAMA0003 TOPIC:status DATA:Test_Data_String DUCKTYPE:LINK";
+    const char* value2 = "DUID:MAMA0003 TOPIC:status DATA:Test_Data_String_Again DUCKTYPE:LINK";
+    const char* groupName = "CDP";
+    const char * txWebQueue = "WEBTX";
+    const char * txLoraQueue = "LORATX";
+    char message_id[255];
 
-    // Write formatted packet to output file in hex
-    string cdpPacket = duckutils::convertToHex(dp.getBuffer().data(), dp.getBuffer().size()).c_str();
+    char  taskBuffer[255];
 
-//tests decoding from hex works 
-    vector<uint8_t> testUndoHex = duckutils::convertFromHex(cdpPacket);
-    duckutils::printVector(testUndoHex);
+    redisCommand(redisConnect, "DEL %s", txWebQueue);
+    redisCommand(redisConnect, "DEL %s", txLoraQueue);
+	  // Use a single buffer to receive the response
+    char response[256];  // Adjust the size according to your needs
+    create_consumer_group(redisConnect, mystream, groupName);
+    enqueue_task(redisConnect, txWebQueue, value);
+    publish(redisConnect, mystream, key, value, response);
+    enqueue_task(redisConnect, txWebQueue, value2);
+    publish(redisConnect, mystream, key, value2, response);
 
 
-    cout << "CDP packet in hex: " << cdpPacket << endl;
-    cout << "(SHOULD MATCH OUTFILE.TXT)" << endl;
-    writeFile("forRadio.txt", CDP);
+
+/*---------read from webserver---------*/
     
-    writeFileWebServer("outfile.txt", outputFileData);
+    while (true) {
+        // Read from the consumer group
+        const string stream_name = "mystream";
+        const string group_name = "TX";
+        const char* streamName = "mystream";
+        const char* groupNm = "TX";
+        //const char* group_name2 = "RX";
+        const string consumer_name = "CDP";
+        string filter_key = "WEB_CDP";
+        const string lora_queue = "LORA";
+        string response;
+        string key_buffer;
+        string  messageBuffer;
+        string messageID;
+        bool messageReceived = 1;
+        //string response;
+
+        //read_from_consumer_group(redisConnect, stream_name, group_name, consumer_name, filter_key, key_buffer, messageBuffer, messageID);
+        //check_pending_messages(redisConnect, streamName, groupNm);
+        int queueLength = queue_len(redisConnect, txWebQueue);
+        if (queueLength == 0) {
+			printf("No message received from Web\n");
+            messageReceived = 0;
+		}
+       
+        if (messageReceived) {
+            // Process the received message
+            
+            dequeue_task(redisConnect, txWebQueue,taskBuffer );
+            string process = taskBuffer; // Assume message_buffer contains the raw data
+            acknowledge_message(redisConnect, streamName, groupNm, message_id);
+
+            string DUID = extractValue(process, "DUID:");
+            string TOPIC = extractValue(process, "TOPIC:");
+            string DATA = extractValue(process, "DATA:");
+            string DUCKTYPE = extractValue(process, "DUCKTYPE:");
+
+            cout << "DUID: " << DUID << endl;
+            cout << "TOPIC: " << TOPIC << endl;
+            cout << "DATA: " << DATA << endl;
+            cout << "DUCKTYPE: " << DUCKTYPE << endl;
+
+            vector<uint8_t> dduid = duckutils::convertStringToVector(DUID);
+            uint8_t topic = Packet::stringToTopic(TOPIC);
+            vector<uint8_t> data = duckutils::convertStringToVector(DATA);
+
+            // Instantiate Packet Object
+            Packet dp;
+            DuckLink dl;
+            //DetectorDuck dd;
+            //MamaDuck md;
+            //PapaDuck pd;
+
+            // Create BloomFilter
+            BloomFilter filter = BloomFilter(DEFAULT_NUM_SECTORS, DEFAULT_NUM_HASH_FUNCS, DEFAULT_BITS_PER_SECTOR, DEFAULT_MAX_MESSAGES);
+
+            if (DUCKTYPE == "MAMA") {
+                /*md.setDuckId(duckutils::convertStringToVector("MAMA0001"));
+                md.handleReceivedPacket(dp);*/
+                // Add code for socket connection to Lora for TX and RX
+            }
+            else if (DUCKTYPE == "PAPA") {
+                /*pd.setDuckId(duckutils::convertStringToVector("PAPA0001"));
+                pd.handleReceivedPacket(dp);*/
+                // Add code for socket connection to Lora for RX and maybe TX for duck commands
+            }
+            else if (DUCKTYPE == "LINK") {
+                dl.setDuckId(duckutils::convertStringToVector("DUCK0001"));
+                dl.prepareForSending(&filter, dduid, topic, dl.getType(), 0x00, data);
+                //dl.sendToLora(redisConnect, dl.getBuffer());
+                /*---------Send to Lora---------*/
+                vector<uint8_t> payload = dl.getBuffer();
+                char* charPtr = new char[payload.size() + 1];
+                memcpy(charPtr, payload.data(), payload.size());
+                charPtr[payload.size()] = '\0';
+                const char * txLoraQueue = "LORATX";
+                enqueue_task(redisConnect, txLoraQueue, charPtr);
+                /*---------Send to Lora---------*/
+                delete[] charPtr;
+                messageBuffer.clear(); // Clear the content of messageBuffer
+                // Add code for socket connection to Lora for TX
+            }
+            else if (DUCKTYPE == "DETECTOR") {
+                /*dd.setDuckId(duckutils::convertStringToVector("DETECTOR"));
+                dd.sendPing(1);
+                dd.handleReceivedPacket();*/
+                // Add code for setup to send and receive pings
+            }
+            else {
+                cout << "Error setting duck type. Recheck spelling and ensure all letters are capitalized." << endl;
+                // Handle error
+            }
+        }
+        else {
+            cout << "No message received. Waiting for next poll..." << endl;
+        }
+
+        // Sleep for a while before checking again
+        sleep(5); // Sleep for 1 second (or adjust as needed)
+    }
 
     return 0;
 }

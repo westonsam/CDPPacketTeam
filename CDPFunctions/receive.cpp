@@ -8,6 +8,8 @@
 #include <chrono>
 #include <ctime>
 #include "Packet.h"
+#include "PapaDuck.h"
+#include "MamaDuck.h"
 //#include "BloomFilter.h"
 #include "Utils.h"
 
@@ -35,7 +37,7 @@ void writeFileWebServer (string filename, vector<string> TxData) {
 }
 
 
-string unmodifyString (string cdp, int position){
+/*string unmodifyString (string cdp, int position){
     char aByte;
     if(cdp[position] > 57 && cdp[position+1] > 57 ){
         aByte = (((cdp[position] -55) << 4) &0xF0) | ((cdp[position+1]-55) & 0x0F);
@@ -58,18 +60,36 @@ string unmodifyString (string cdp, int position){
     cdp.erase(position+1, 1);
     return cdp;
 
+}*/
+string unmodifyString (string cdp, int position){
+    if(cdp[position] > 54){
+        cdp[position] = cdp[position] - 55;
+    }
+    else{
+        cdp[position] = cdp[position] - 48;
+    }
+    
+    return cdp;
 }
+
 
 
 int main()
 {
 
+////set device ID
+    string devID = "MAMA0003";
+
     // Instantiate Packet Object
     Packet dp;
 
+    MamaDuck md;
+
+    md.setDuckId(duckutils::convertStringToVector("MAMA0003"));
+
     vector<uint8_t> packetRecieved;
     //packetRecieved = {'P', 'A', 'P', 'A' , 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A' , 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A' , 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A', 'P', 'A'};
-    string CDP = "PAPA0001MAMA0003ADB3100200ACE57C36Test Data String";
+    string CDP = "DUCK0001MAMA0003Y4D5G50��mTest Data String";
 
     for(int i = 0; i < 7; i++)
     {
@@ -82,18 +102,43 @@ int main()
     //gets payload generated
     vector<uint8_t> payload = dp.getBuffer();
 
+    //Packet packet = Packet(dp.getBuffer());
+    //duckutils::printVector(packet.getBuffer());
 
-   //parses sections of received cdp payload
-    vector<string> outputFileData;
-    outputFileData = dp.decodePacket(payload);
+    
 
-    CDP = duckutils::convertVectorToString(payload);
+    md.handleReceivedPacket(dp);
 
-    cout << "CDP packet as a string: " << CDP << endl;
+    dp.reset();
 
-    writeFileWebServer("outfile.txt", outputFileData);
+    /*string destination = CDP.substr(DDUID_POS, devID.length());
+
+    //check if this is the packet is going to this device
+    if(destination == devID)
+    {
+        //TODO handle duck commands, acknowledgements, and pings
 
 
+        //parses sections of received cdp payload
+        vector<string> outputFileData;
+        outputFileData = dp.decodePacket(payload);
+
+        CDP = duckutils::convertVectorToString(payload);
+
+        cout << "CDP packet as a string: " << CDP << endl;
+
+        writeFileWebServer("outfile.txt", outputFileData);
+    }
+    else if (destination  == duckutils::convertVectorToString(BROADCAST_DUID))
+    {
+
+    }
+    else
+    {
+        //Handle relaying data
+        cout << "Not this duck" << endl;
+    }*/
+    //if not this do nothing
 
     return 0;
 }

@@ -2,6 +2,7 @@
 #include "Utils.h"
 #include "BloomFilter.h"
 #include "CRC32.h"
+#include "redis.h"
 #include <string>
 #include <vector>
 #include <cstdlib>
@@ -10,6 +11,8 @@
 #include <ctime>
 #include <iomanip>
 #include <sstream>
+#include <cstring> // For memcpy
+
 
 using namespace std;
 
@@ -83,7 +86,7 @@ int Packet::prepareForSending(BloomFilter *filter, vector<uint8_t> dduid, uint8_
   this->hopCount = hopCount;
 
   // data crc
-  vector<uint8_t> dataCRC = duckutils::convert32BitToVector(dcrc);
+  dataCRC = duckutils::convert32BitToVector(dcrc);
   buffer.insert(buffer.end(), dataCRC.begin(), dataCRC.end());
   this->dcrc = dcrc;
   
@@ -103,7 +106,18 @@ int Packet::prepareForSending(BloomFilter *filter, vector<uint8_t> dduid, uint8_
   cout << "Data CRC:     " << bufferString.substr((DATA_CRC_POS) * 2, (DATA_POS - DATA_CRC_POS) * 2) << endl;
   cout << "Data:         " << bufferString.substr(DATA_POS * 2) << endl;
   cout << "Built packet: " << duckutils::convertToHex(buffer.data(), buffer.size()).c_str() << endl;
+
+  
+
   return DUCK_ERR_NONE;
+}
+
+void Packet::sendToLora(redisContext *c, vector<uint8_t> dataTx){
+/* ----------------send to Lora---------------*/
+
+
+
+/* ----------------send to Lora---------------*/
 }
 
 vector<string> Packet::decodePacket(vector<uint8_t> cdpPayload){
@@ -215,5 +229,57 @@ void Packet::calculateCRC(vector<uint8_t> data)
   dcrc = value;
 }
 
+bool Packet::checkRelayPacket(BloomFilter *filter, std::vector<uint8_t> dataBuffer) {
+  unsigned char* buff = dataBuffer.data();
+  bool alreadySeen = filter->bloom_check(&buff[MUID_POS], MUID_LENGTH);
+  if(alreadySeen)
+  {
+    std::cout << "Packet has already been seen. No relay" << std::endl;
+    return false;
+  }
+  else {
+    //stores MUID into 
+    filter->bloom_add(&dataBuffer[MUID_POS], MUID_LENGTH);
+    //add statement print the packet
+  }
+  dataBuffer.at(HOP_COUNT_POS)++;
+  buffer = dataBuffer;
+  return true;
+}
 
+int Packet::sendPing(){
+  int err = DUCK_ERR_NONE;
+  std::vector<uint8_t> dataPing(1, 0);
+  err = txPacket->prepareForSending(&filter, ZERO_DUID, this->getType(), reservedTopic::ping, txPacket->hopCount, dataPing);
+  if (err != DUCK_ERR_NONE) {
+    cout << "ERROR Failed to build ping packet, err = " << err << endl;
+    return err;
+  }
+
+  //send to radio
+
+
+  //err = duckRadio.sendData(txPacket->getBuffer());
+  /*if (err != DUCK_ERR_NONE) {
+    logerr_ln("ERROR Lora sendData failed, err = %d", err);
+  }*/
+  return err;
+}
+
+
+int Packet::sendPong(){
+  int err = DUCK_ERR_NONE;
+  vector<uint8_t> dataPong(1, 0);
+  err = txPacket->prepareForSending(&filter, ZERO_DUID, this->getType(), reservedTopic::pong,txPacket->hopCount, dataPong);
+  if (err != DUCK_ERR_NONE) {
+    cout << "ERROR Oops! failed to build pong packet, err = " << err << endl;
+    //return err;
+  }
+  /*err = duckRadio.sendData(txPacket->getBuffer());
+  if (err != DUCK_ERR_NONE) {
+    logerr_ln("ERROR Oops! Lora sendData failed, err = %d", err);
+    return err;
+  }*/
+  return err;
+}
 

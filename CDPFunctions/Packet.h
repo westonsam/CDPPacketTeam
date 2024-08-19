@@ -9,6 +9,7 @@
 #include <vector>  //includes vectors, similar arrays
 #include "BloomFilter.h"
 #include "Utils.h"
+#include "redis.h"
 
 #define MAX_HOPS 6
 
@@ -35,6 +36,8 @@
 #define MAX_DATA_LENGTH 228
 // #define MAX_PATH_OFFSET (PACKET_LENGTH - DUID_LENGTH - 1)
 
+#define MAX_MUID_PER_ACK 19
+
 enum DuckType
 {
     /// A Duck of unknown type
@@ -49,6 +52,8 @@ enum DuckType
     DETECTOR = 0x04,
     MAX_TYPE
 };
+
+
 
 enum topics
 {
@@ -137,6 +142,9 @@ public:
     /// Message topic (1 byte)
     uint8_t topic;
 
+    /// Offset to the Path section (1 byte)
+    uint8_t path_offset;
+
     /// Type of ducks (1 byte)
     uint8_t duckType;
 
@@ -145,6 +153,7 @@ public:
 
     /// crc32 for the data section (4 bytes)
     std::uint32_t dcrc;
+    std::vector<uint8_t> dataCRC;
     
     /// Data section
     std::vector<uint8_t> data;
@@ -156,8 +165,11 @@ public:
     unsigned long timeReceived;
 
     // packet constructors
-    Packet() {}
-    Packet(const std::vector<uint8_t> &buffer)
+    Packet() {
+    reset();
+  }
+
+    /*Packet(const std::vector<uint8_t> &buffer)
     {
         int buffer_length = buffer.size();
         sduid.assign(&buffer[SDUID_POS], &buffer[DDUID_POS]);
@@ -168,7 +180,52 @@ public:
         hopCount = buffer[HOP_COUNT_POS];
         dcrc = duckutils::toUint32(&buffer[DATA_CRC_POS]);
         data.assign(&buffer[DATA_POS], &buffer[buffer_length]);
+    }*/
+Packet(std::vector<uint8_t> buff)
+    {
+        int buffer_length = buff.size();
+        sduid.assign(buff.at(SDUID_POS), buff.at(DDUID_POS));
+        dduid.assign(buff.at(DDUID_POS), buff.at(MUID_POS));
+        muid.assign(buff.at(MUID_POS), buff.at(TOPIC_POS));
+        topic = buff.at(TOPIC_POS);
+        duckType = buff.at(DUCK_TYPE_POS);
+        hopCount = buff.at(HOP_COUNT_POS);
+        dataCRC.assign(buff.at(DATA_CRC_POS), buff.at(DATA_POS));
+        data.assign(buff.at(DATA_POS), buff.at(buffer_length));
     }
+   /*Packet(const std::vector<uint8_t>& buff) {
+        if (buff.size() < DATA_POS) {
+            throw std::out_of_range("Buffer size is too small.");
+        }
+        sduid.assign(buff.begin() + SDUID_POS, buff.begin() + DDUID_POS);
+        dduid.assign(buff.begin() + DDUID_POS, buff.begin() + MUID_POS);
+        muid.assign(buff.begin() + MUID_POS, buff.begin() + TOPIC_POS);
+        topic = buff[TOPIC_POS];
+        duckType = buff[DUCK_TYPE_POS];
+        hopCount = buff[HOP_COUNT_POS];
+        dataCRC.assign(buff.begin() + DATA_CRC_POS, buff.begin() + DATA_POS);
+        data.assign(buff.begin() + DATA_POS, buff.end());
+    }*/
+
+
+    ~Packet() {}
+
+  /**
+   * @brief Resets the cdp packet and underlying byte buffers.
+   *
+   */
+  /*void reset() {
+    std::vector<uint8_t>().swap(sduid);
+    std::vector<uint8_t>().swap(muid);
+    std::vector<uint8_t>().swap(path);
+    std::vector<uint8_t>().swap(data);
+    duckType = DuckType::UNKNOWN;
+    hopCount = 0;
+    topic = 0;
+    path_offset = 0;
+    dcrc = 0;
+    std::vector<uint8_t>().swap(buffer);
+  }*/
 
     // ---- packet functions ----
 
@@ -178,6 +235,8 @@ public:
 
     int prepareForSending(BloomFilter *filter, const vector<uint8_t> destinationId, uint8_t duckType, uint8_t Topic, uint8_t hopCount, vector<uint8_t> data);
 
+    void sendToLora(redisContext *c, vector<uint8_t> txData);
+
     vector<string> decodePacket(vector<uint8_t> cdpPayload);
     
     vector<uint8_t> parseCDPPacket (uint8_t startPosition, uint8_t endPosition,vector<uint8_t> payload);
@@ -186,10 +245,17 @@ public:
 
     void setBuffer(vector<uint8_t> buffer);
 
-    uint8_t getTopic() { return buffer[TOPIC_POS]; }
+    uint8_t getTopic() { return buffer.at(TOPIC_POS); }
 
     void reset() { vector<uint8_t>().swap(buffer); }
 
+    bool checkRelayPacket(BloomFilter *filter, std::vector<uint8_t> data);
+
+    int sendPong();
+
+    int sendPing();
+
+    
 
     static std::string topicToString(int topic)
     {
@@ -282,11 +348,23 @@ public:
         }
         return topics::status;
     }
+    void setType(int type) {this->duckType = type;}
+    int getType(){return this->duckType;};
 
 private:
     vector<uint8_t> buffer;
     static void getMessageId(BloomFilter *filter, uint8_t message_id[MUID_LENGTH]);
     void calculateCRC(vector<uint8_t> data);
+
+protected: 
+    Packet* txPacket = NULL;
+    Packet* rxPacket = NULL;
+
+    BloomFilter filter;
+
+    std::vector<uint8_t> lastMessageMuid;
+    
+
 };
 
 #endif // PACKET_H

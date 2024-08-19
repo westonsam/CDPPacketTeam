@@ -33,90 +33,30 @@ public:
    * @param bitsPerSector, The size of a sector in bits
    * @param maxMsgs, The maximum number of messages until the next filter is used.
    */
-  BloomFilter(int numSectors, int numHashes, int bitsPerSector, int maxMsgs)
-  {
-    this->numSectors = numSectors;
-    this->numHashes = numHashes;
-    this->bitsPerSector = bitsPerSector;
-    this->activeFilter = 1;
-    this->maxMsgs = maxMsgs;
-    this->nMsg = 0;
-    cout << "BloomFilter constructor: numSectors: " << numSectors << ", numHashes: " << numHashes << ", bitsPerSector: " << bitsPerSector << ", maxMsgs: " << maxMsgs << endl;
+  BloomFilter() : BloomFilter(DEFAULT_NUM_SECTORS, DEFAULT_NUM_HASH_FUNCS, DEFAULT_BITS_PER_SECTOR, DEFAULT_MAX_MESSAGES) {
 
-    cout << "initialize bloom filter 1";
-    // Initialize the bloom filters, fill with 0's
-    this->filter1 = new unsigned int[this->numSectors];
-    cout << "Filter 1 address" << this->filter1 << endl;
-    if (this->filter1 == NULL)
-    {
-      cout << "Memory allocation for Bloom Filter 1 failed!" << endl;
-      exit(0);
-    }
-    for (int n = 0; n < this->numSectors; n++)
-    {
-      this->filter1[n] = 0;
-    }
-    cout << "Initialized BF1, " << numSectors << " slots, " << this->numSectors << " this->numSectors" << endl;
-
-    cout << "initialize bloom filter 2";
-    this->filter2 = new unsigned int[this->numSectors];
-    cout << "Filter 2 address " << this->filter2 << endl;
-    if (this->filter2 == NULL)
-    {
-      cout << "Memory allocation for Bloom Filter 2 failed!" << endl;
-      exit(0);
-    }
-    for (int n = 0; n < this->numSectors; n++)
-    {
-      this->filter2[n] = 0;
-    }
-    cout << "Initialized BF2, " << numSectors << " slots, " << this->numSectors << " this->numSectors" << endl;
-
-    cout << "initialize random seeds";
-    // get random seeds for hash functions
-    int *Seeds = new int[numHashes];
-    if (Seeds == NULL)
-    {
-      cout << "Memory allocation for seeds failed!" << endl;
-      exit(0);
-    }
-    srand(time(NULL));
-    bool seedCollision = true;
-    bool collision;
-    while (seedCollision)
-    {
-      collision = false;
-      for (int i = 0; i < numHashes; i++)
-      {
-        int r = rand();
-        if (Seeds[i] == r)
-        {
-          r = rand();
-          collision = true;
-          break;
-        }
-        Seeds[i] = r;
-      }
-      if (!collision)
-      {
-        seedCollision = false;
-      }
-    }
-
-    for (int i = 0; i < numHashes; i++)
-    {
-      cout << "random seed " << i + 1 << ": " << Seeds[i] << endl;
-    }
-    this->Seeds = Seeds;
-
-    cout << "bloom_init end" << endl;
   }
+
+  /**
+  * @brief Initialize a bloom filter
+  * 
+  * @param numSectors, The number of sectors in filter
+  * @param numHashes, The number of hash functions
+  * @param bitsPerSector, The size of a sector in bits
+  * @param maxMsgs, The maximum number of messages until the next filter is used.
+  */
+  BloomFilter(int numSectors, int numHashes, int bitsPerSector, int maxMsgs);
+
+  ~BloomFilter();
+
   
 
   /**
    * @return 1 if we (possibly) found word; for a new word returns 0
    */
   int bloom_check(unsigned char *msg, int msgSize);
+
+  int bloom_check(std::vector<uint8_t> msg, int msgSize);
 
   void bloom_add(unsigned char *msg, int msgSize);
 
